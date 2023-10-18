@@ -47,6 +47,13 @@ const server = http.createServer((req, res) => {
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({ message: "Usuario o contraseña incorrectos" }));
     }
+  } else if (trimmedPath === "getProducts" && method === "get") {
+    const dbData = fs.readFileSync(db, "utf8");
+    const json = JSON.parse(dbData);
+
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify(json.products));
   } else {
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json");

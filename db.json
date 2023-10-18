@@ -1,9 +1,31 @@
 {
-    "users": [
-        {
-            "id": 1,
-            "username": "asd",
-            "password": "12345"
-        }
-    ]
+  "users": [
+    {
+      "id": 1,
+      "username": "asd",
+      "password": "12345"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "username": "Mesa de madera",
+      "price": 1550.65
+    },
+    {
+      "id": 2,
+      "username": "Silla de madera",
+      "price": 435.05
+    },
+    {
+      "id": 3,
+      "username": "Lámpara de pie",
+      "price": 235
+    },
+    {
+      "id": 4,
+      "username": "Banco para exterior",
+      "price": 5680.99
+    }
+  ]
 }
