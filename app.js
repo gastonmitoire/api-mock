@@ -48,12 +48,23 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ message: "Usuario o contraseña incorrectos" }));
     }
   } else if (trimmedPath === "getProducts" && method === "get") {
-    const dbData = fs.readFileSync(db, "utf8");
-    const json = JSON.parse(dbData);
+    const token = headers.authorization.split(" ")[1];
 
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(json.products));
+    if (
+      token ===
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidXNlcm5hbWUiOiJhc2QiLCJtZXNzYWdlIjoiRXN0ZSBzZXJpYSBlbCB0b2tlbiBkZXZ1ZWx0byIsImlhdCI6MTUxNjIzOTAyMn0.l7BJWtn3q1IOmliMMO6EbH-_ZT4jk4nhGAxxH96Q5n4"
+    ) {
+      const dbData = fs.readFileSync(db, "utf8");
+      const json = JSON.parse(dbData);
+
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify(json.products));
+    } else {
+      res.statusCode = 401;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ message: "Usuario no autorizado" }));
+    }
   } else {
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json");
