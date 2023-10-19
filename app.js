@@ -2,6 +2,7 @@ const http = require("http");
 const url = require("url");
 const fs = require("fs");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 
 const hostname = "127.0.0.1";
 const port = 3000;
@@ -21,8 +22,6 @@ const server = http.createServer((req, res) => {
     const trimmedPath = path.replace(/^\/+|\/+$/g, "");
     const method = req.method.toLowerCase();
     const headers = req.headers;
-
-    console.log(trimmedPath);
 
     if (trimmedPath === "v1/login" && method === "post") {
       const decoded = Buffer.from(headers.authorization.split(" ")[1], "base64")
@@ -47,9 +46,15 @@ const server = http.createServer((req, res) => {
               id: user.id,
               username: user.username,
             },
-            token:
-              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiaWQiOjEsInVzZXJuYW1lIjoiYXNkIiwibWVzc2FnZSI6IkVzdGUgc2VyaWEgZWwgdG9rZW4gZGV2dWVsdG8iLCJpYXQiOjE1MTYyMzkwMjJ9.ELyHZAbjeMB_B68sh6ElQJab1xxxhP_Q-6BB73tNZZA",
-            expiresIn: "2023-12-31T23:59:59.000Z",
+            token: jwt.sign(
+              {
+                sub: user.id,
+                iat: Math.floor(Date.now() / 1000),
+                username: user.username,
+                message: "Este es un mensaje secreto",
+              },
+              "secret"
+            ),
           })
         );
       } else {
@@ -60,22 +65,37 @@ const server = http.createServer((req, res) => {
         );
       }
     } else if (trimmedPath === "v1/getProducts" && method === "get") {
-      const token = headers.authorization.split(" ")[1];
+      try {
+        const token = headers.authorization.split(" ")[1];
+        const decoded = jwt.verify(token, "secret");
 
-      if (
-        token ===
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiaWQiOjEsInVzZXJuYW1lIjoiYXNkIiwibWVzc2FnZSI6IkVzdGUgc2VyaWEgZWwgdG9rZW4gZGV2dWVsdG8iLCJpYXQiOjE1MTYyMzkwMjJ9.ELyHZAbjeMB_B68sh6ElQJab1xxxhP_Q-6BB73tNZZA"
-      ) {
         const dbData = fs.readFileSync(db, "utf8");
         const json = JSON.parse(dbData);
 
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify(json.products));
-      } else {
-        res.statusCode = 401;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ message: "Usuario no autorizado" }));
+        const user = json.users.find((user) => user.id === decoded.sub);
+
+        if (user) {
+          const dbData = fs.readFileSync(db, "utf8");
+          const json = JSON.parse(dbData);
+
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify(json.products));
+        } else {
+          res.statusCode = 401;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ message: "Usuario no autorizado" }));
+        }
+      } catch (error) {
+        if (error instanceof jwt.JsonWebTokenError) {
+          res.statusCode = 401;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ message: "Token JWT inválido" }));
+        } else {
+          res.statusCode = 500;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ message: "Error interno del servidor" }));
+        }
       }
     } else if (trimmedPath === "v1/checkout" && method === "post") {
       let body = [];
